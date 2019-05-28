@@ -33,10 +33,11 @@ def compare(path, only_text=False):
         largest_size = max(os.path.getsize(left), os.path.getsize(right))
 
         if all(x == 0 for x in (smallest_size, largest_size)):
-            yield ComparisonResult(difference=0, paths=cmp_paths)
+            yield ComparisonResult(difference=0, paths=cmp_paths, method='BOTH_EMPTY')
         elif smallest_size == 0 or largest_size / smallest_size >= 2:
-            yield ComparisonResult(difference=100, paths=cmp_paths)
+            yield ComparisonResult(difference=100, paths=cmp_paths, method='SIZE_DIFFERENCE')
 
+        
         elif not any(is_binary(x) for x in (left, right)):
             left_contents = read_memoized(left)
             right_contents = read_memoized(right)
@@ -44,8 +45,13 @@ def compare(path, only_text=False):
             max_len = max(len(left_contents), len(right_contents))
             yield ComparisonResult(
                 difference=Levenshtein.wfi(left_contents, right_contents) * 100 / max_len,
-                paths=cmp_paths
+                paths=cmp_paths,
+                method='STRING_COMPARISON'
             )
 
         else:
-            yield ComparisonResult(size_cmp, cmp_paths)
+            yield ComparisonResult(
+                difference=size_cmp,
+                paths=cmp_paths,
+                method='BINARY_SIZES'
+            )

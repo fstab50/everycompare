@@ -1,3 +1,3 @@
 from collections import namedtuple
 
-ComparisonResult = namedtuple('ComparisonResult', ('difference', 'paths'))
+ComparisonResult = namedtuple('ComparisonResult', ('difference', 'paths', 'method'))
