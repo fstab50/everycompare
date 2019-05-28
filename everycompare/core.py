@@ -1,5 +1,5 @@
 import itertools
-from functools import lru_cache
+from functools import lru_cache, partial
 import os
 
 from binaryornot.check import is_binary
@@ -38,36 +38,38 @@ def get_files(path, only_text=False):
     
     return list(__iterate())
 
+def compare_pair(items, base_path):
+    left, right = sorted(items)
+    paths = [os.path.relpath(x.path, base_path) for x in (left, right)]
 
-def compare(path, only_text=False):
+    smallest_size = min(left.size, right.size)
+    largest_size = max(left.size, right.size)
+    size_ratio = smallest_size*100 / largest_size
+
+    if all(x == 0 for x in (smallest_size, largest_size)):
+        return ComparisonResult(difference=0, paths=paths, method='BOTH_EMPTY')
+
+    elif smallest_size == 0 or largest_size / smallest_size >= 2:
+        return ComparisonResult(difference=100, paths=paths, method='SIZE_DIFFERENCE')
+
+    
+    elif not any(x.is_binary for x in (left, right)):
+        max_len = max(left.text_length, right.text_length)
+        return ComparisonResult(
+            difference=Levenshtein.wfi(left.contents, right.contents) * 100 / max_len,
+            paths=paths,
+            method='STRING_COMPARISON'
+        )
+
+    else:
+        return ComparisonResult(
+            difference=size_ratio,
+            paths=paths,
+            method='BINARY_SIZES'
+        )
+
+def compare(path, only_text=False, mapping_function=map):
     files = get_files(path, only_text)
+    _comparer = partial(compare_pair, base_path=path)
 
-    for items in itertools.combinations(files, 2):
-        left, right = sorted(items)
-        paths = [os.path.relpath(x.path, path) for x in (left, right)]
-
-        smallest_size = min(left.size, right.size)
-        largest_size = max(left.size, right.size)
-        size_ratio = smallest_size*100 / largest_size
-
-        if all(x == 0 for x in (smallest_size, largest_size)):
-            yield ComparisonResult(difference=0, paths=paths, method='BOTH_EMPTY')
-
-        elif smallest_size == 0 or largest_size / smallest_size >= 2:
-            yield ComparisonResult(difference=100, paths=paths, method='SIZE_DIFFERENCE')
-
-        
-        elif not any(x.is_binary for x in (left, right)):
-            max_len = max(left.text_length, right.text_length)
-            yield ComparisonResult(
-                difference=Levenshtein.wfi(left.contents, right.contents) * 100 / max_len,
-                paths=paths,
-                method='STRING_COMPARISON'
-            )
-
-        else:
-            yield ComparisonResult(
-                difference=size_ratio,
-                paths=paths,
-                method='BINARY_SIZES'
-            )
+    return sorted(mapping_function(_comparer, itertools.combinations(files, 2)))
