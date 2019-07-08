@@ -35,15 +35,14 @@ import everycompare
 
 
 requires = [
-    'binaryornot'
+    'binaryornot',
+    'tqdm>=4.32.0',
+    'python-levenshtein-wheels'
 ]
 
 
 _project = 'everycompare'
 _root = os.path.abspath(os.path.dirname(__file__))
-_ex_fname = 'exclusions.list'
-_ex_dirs_fname = 'directories.list'
-_comp_fname = 'everycompare-completion.bash'
 
 
 def _root_user():
@@ -55,27 +54,6 @@ def _root_user():
     elif subprocess.getoutput('echo $EUID') == '0':
         return True
     return False
-
-
-def _user():
-    """Returns username of caller"""
-    return getpass.getuser()
-
-
-def _set_pythonpath():
-    """
-    Temporarily reset PYTHONPATH to prevent home dir = python module home
-    """
-    os.environ['PYTHONPATH'] = '/'
-
-
-def create_artifact(object_path, type):
-    """Creates post install filesystem artifacts"""
-    if type == 'file':
-        with open(object_path, 'w') as f1:
-            f1.write(sourcefile_content())
-    elif type == 'dir':
-        os.makedirs(object_path)
 
 
 def os_parityPath(path):
@@ -96,79 +74,6 @@ class PostInstallDevelop(develop):
         develop.run(self)
 
 
-class PostInstall(install):
-    """
-    Summary.
-
-        Postinstall script to place bash completion artifacts
-        on local filesystem
-
-    """
-    def valid_os_shell(self):
-        """
-        Summary.
-
-            Validates install environment for Linux and Bash shell
-
-        Returns:
-            Success | Failure, TYPE bool
-
-        """
-        if platform.system() == 'Windows':
-            return False
-        elif which('bash'):
-            return True
-        elif 'bash' in subprocess.getoutput('echo $SHELL'):
-            return True
-        return False
-
-    def run(self):
-        """
-        Summary.
-
-            Executes post installation configuration only if correct
-            environment detected
-
-        """
-        if self.valid_os_shell():
-
-            completion_file = user_home() + '/.bash_completion'
-            completion_dir = user_home() + '/.bash_completion.d'
-            config_dir = user_home() + '/.config/' + _project
-
-            if not os.path.exists(os_parityPath(completion_file)):
-                create_artifact(os_parityPath(completion_file), 'file')
-            if not os.path.exists(os_parityPath(completion_dir)):
-                create_artifact(os_parityPath(completion_dir), 'dir')
-            if not os.path.exists(os_parityPath(config_dir)):
-                create_artifact(os_parityPath(config_dir), 'dir')
-
-            # ensure installation of home directory profile artifacts (data_files)
-            if not os.path.exists(os_parityPath(completion_dir + '/' + _comp_fname)):
-                copyfile(
-                    os_parityPath('bash' + '/' + _comp_fname),
-                    os_parityPath(completion_dir + '/' + _comp_fname)
-                )
-            if not os.path.exists(os_parityPath(config_dir + '/' + _ex_fname)):
-                copyfile(
-                    os_parityPath('config' + '/' + _ex_fname),
-                    os_parityPath(config_dir + '/' + _ex_fname)
-                )
-            if not os.path.exists(os_parityPath(config_dir + '/' + _ex_dirs_fname)):
-                copyfile(
-                    os_parityPath('config' + '/' + _ex_dirs_fname),
-                    os_parityPath(config_dir + '/' + _ex_dirs_fname)
-                )
-
-            if _root_user():
-                copyfile(
-                        completion_dir + '/' + _comp_fname,
-                        '/etc/bash_completion.d/' + _comp_fname,
-                    )
-                os.remove(completion_dir + '/' + _comp_fname)
-        install.run(self)
-
-
 def preclean(dst):
     if os.path.exists(dst):
         os.remove(dst)
@@ -187,23 +92,6 @@ def sourcefile_content():
     done\n
     """
     return sourcefile
-
-
-def user_home():
-    """Returns os specific home dir for current user"""
-    try:
-        if platform.system() == 'Linux':
-            return os.path.expanduser('~')
-
-        elif platform.system() == 'Windows':
-            username = os.getenv('username')
-            return 'C:\\Users\\' + username
-
-        elif platform.system() == 'Java':
-            print('Unable to determine home dir, unsupported os type')
-            sys.exit(1)
-    except OSError as e:
-        raise e
 
 
 setup(
@@ -231,7 +119,7 @@ setup(
     python_requires='>=3.6, <4',
     entry_points={
         'console_scripts': [
-            'everycompare=everycompare.cli:init_cli'
+            'everycompare=everycompare.cli:main'
         ]
     },
     zip_safe=False
