@@ -1,6 +1,6 @@
 """
 
-xlines :  Copyright 2018-2019, Blake Huber
+everycompare :  Copyright 2018-2019, Michal Wozniczak
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,19 +31,19 @@ from setuptools.command.install import install
 import getpass
 from pathlib import Path
 from codecs import open
-import xlines
+import everycompare
 
 
 requires = [
-    'pygments'
+    'binaryornot'
 ]
 
 
-_project = 'xlines'
+_project = 'everycompare'
 _root = os.path.abspath(os.path.dirname(__file__))
 _ex_fname = 'exclusions.list'
 _ex_dirs_fname = 'directories.list'
-_comp_fname = 'xlines-completion.bash'
+_comp_fname = 'everycompare-completion.bash'
 
 
 def _root_user():
@@ -208,12 +208,12 @@ def user_home():
 
 setup(
     name=_project,
-    version=xlines.__version__,
+    version=everycompare.__version__,
     description='Count the number of lines of code in a project',
     long_description=read('DESCRIPTION.rst'),
-    url='https://github.com/fstab50/xlines',
-    author=xlines.__author__,
-    author_email=xlines.__email__,
+    url='https://github.com/fstab50/everycompare',
+    author=everycompare.__author__,
+    author_email=everycompare.__email__,
     license='GPL-3.0',
     classifiers=[
         'Topic :: Software Development :: Build Tools',
@@ -222,6 +222,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: POSIX :: Linux',
+        'Operating System :: Microsoft :: Windows'
     ],
     keywords='code development tools',
     packages=find_packages(exclude=['assets', 'docs', 'reports', 'scripts', 'tests']),
@@ -231,14 +232,9 @@ setup(
     cmdclass={
         'install': PostInstall
     },
-    data_files=[
-        (os_parityPath(user_home() + '/' + '.bash_completion.d'), ['bash/' + _comp_fname]),
-        (os_parityPath(user_home() + '/' + '.config' + '/' + _project), ['config/' + _ex_fname]),
-        (os_parityPath(user_home() + '/' + '.config' + '/' + _project), ['config/' + _ex_dirs_fname])
-    ],
     entry_points={
         'console_scripts': [
-            'xlines=xlines.cli:init_cli'
+            'everycompare=everycompare.cli:init_cli'
         ]
     },
     zip_safe=False
