@@ -1,4 +1,5 @@
 binaryornot==0.4.4
+libtools
 python-levenshtein-wheels
 pylev3==1.1.0
 pkginfo

@@ -2,6 +2,7 @@ import argparse
 import re
 import sys
 from multiprocessing import Pool
+from libtools import export_json_object
 
 try:
     from tqdm import tqdm
@@ -39,7 +40,7 @@ def main(args=None):
         processed = [i for i in tqdm(result, total=count)]
 
     out = formatter(processed)
-    print(out)
+    export_json_object(out)
 
 if __name__ == "__main__":
     main()

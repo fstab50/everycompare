@@ -36,6 +36,7 @@ import everycompare
 
 requires = [
     'binaryornot',
+    'libtools',
     'tqdm>=4.32.0',
     'python-levenshtein-wheels'
 ]
