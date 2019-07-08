@@ -229,9 +229,6 @@ setup(
     include_package_data=True,
     install_requires=requires,
     python_requires='>=3.6, <4',
-    cmdclass={
-        'install': PostInstall
-    },
     entry_points={
         'console_scripts': [
             'everycompare=everycompare.cli:init_cli'
