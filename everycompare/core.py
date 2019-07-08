@@ -3,16 +3,16 @@ from functools import lru_cache, partial
 import os
 
 from binaryornot.check import is_binary
-from pylev3 import Levenshtein
+import Levenshtein
 
 from everycompare.structures import ComparisonResult, FileMeta
 
 @lru_cache()
 def read_memoized(path):
-    with open(path) as f:
+    with open(path, errors='ignore') as f:
         return f.read()
 
-def get_files(path, only_text=False):
+def get_files(path, only_text=False, exclusion_pattern=None):
     def __filter(item_path):
         return (True if not only_text else not is_binary(item_path))
 
@@ -20,6 +20,9 @@ def get_files(path, only_text=False):
         for root, _, files in os.walk(path):
             for f in files:
                 filepath = os.path.join(root, f)
+                if exclusion_pattern and exclusion_pattern.findall(filepath):
+                    continue
+
                 if not __filter(filepath):
                     continue
 
@@ -44,19 +47,19 @@ def compare_pair(items, base_path):
 
     smallest_size = min(left.size, right.size)
     largest_size = max(left.size, right.size)
-    size_ratio = smallest_size*100 / largest_size
-
     if all(x == 0 for x in (smallest_size, largest_size)):
         return ComparisonResult(difference=0, paths=paths, method='BOTH_EMPTY')
 
-    elif smallest_size == 0 or largest_size / smallest_size >= 2:
+    size_ratio = smallest_size*100 / largest_size
+
+    if smallest_size == 0 or largest_size / smallest_size >= 2:
         return ComparisonResult(difference=100, paths=paths, method='SIZE_DIFFERENCE')
 
 
     elif not any(x.is_binary for x in (left, right)):
         max_len = max(left.text_length, right.text_length)
         return ComparisonResult(
-            difference=Levenshtein.wfi(left.contents, right.contents) * 100 / max_len,
+            difference=Levenshtein.distance(left.contents, right.contents) * 100 / max_len,
             paths=paths,
             method='STRING_COMPARISON'
         )
@@ -68,8 +71,9 @@ def compare_pair(items, base_path):
             method='BINARY_SIZES'
         )
 
-def compare(path, only_text=False, mapping_function=map):
-    files = get_files(path, only_text)
+def compare(path, only_text=False, mapping_function=map, exclusion_pattern=None):
+    files = get_files(path, only_text, exclusion_pattern)
     _comparer = partial(compare_pair, base_path=path)
+    to_compare = tuple(itertools.combinations(files, 2))
 
-    return sorted(mapping_function(_comparer, itertools.combinations(files, 2)))
+    return mapping_function(_comparer, to_compare), len(to_compare)
