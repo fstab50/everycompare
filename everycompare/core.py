@@ -5,7 +5,7 @@ import os
 from binaryornot.check import is_binary
 from pylev3 import Levenshtein
 
-from structures import ComparisonResult, FileMeta
+from everycompare.structures import ComparisonResult, FileMeta
 
 @lru_cache()
 def read_memoized(path):
@@ -15,7 +15,7 @@ def read_memoized(path):
 def get_files(path, only_text=False):
     def __filter(item_path):
         return (True if not only_text else not is_binary(item_path))
-    
+
     def __iterate():
         for root, _, files in os.walk(path):
             for f in files:
@@ -24,10 +24,10 @@ def get_files(path, only_text=False):
                     continue
 
                 size = os.path.getsize(filepath)
-                
+
                 is_bin = is_binary(filepath)
                 contents = None if is_bin else read_memoized(filepath)
-                
+
                 yield FileMeta(
                     path=filepath,
                     is_binary=is_bin,
@@ -35,7 +35,7 @@ def get_files(path, only_text=False):
                     size=size,
                     text_length=size if is_bin else len(contents)
                 )
-    
+
     return list(__iterate())
 
 def compare_pair(items, base_path):
@@ -52,7 +52,7 @@ def compare_pair(items, base_path):
     elif smallest_size == 0 or largest_size / smallest_size >= 2:
         return ComparisonResult(difference=100, paths=paths, method='SIZE_DIFFERENCE')
 
-    
+
     elif not any(x.is_binary for x in (left, right)):
         max_len = max(left.text_length, right.text_length)
         return ComparisonResult(

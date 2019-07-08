@@ -3,7 +3,7 @@ import sys
 
 from multiprocessing import Pool
 
-from core import compare
+from everycompare.core import compare
 
 parser = argparse.ArgumentParser()
 parser.add_argument('dir_path', help='Directory to analyze')
